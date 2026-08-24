@@ -14,7 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          health: string
+          id: string
+          name: string
+          owner: string
+          phase: string
+          priority: string
+          sort_order: number
+          start_date: string | null
+          target_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          description?: string
+          health?: string
+          id?: string
+          name: string
+          owner?: string
+          phase?: string
+          priority?: string
+          sort_order?: number
+          start_date?: string | null
+          target_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          health?: string
+          id?: string
+          name?: string
+          owner?: string
+          phase?: string
+          priority?: string
+          sort_order?: number
+          start_date?: string | null
+          target_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ridac_items: {
+        Row: {
+          created_at: string
+          detail: string
+          due_date: string | null
+          id: string
+          owner: string
+          project_id: string
+          ref_code: string
+          resolution: string
+          severity: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string
+          due_date?: string | null
+          id?: string
+          owner?: string
+          project_id: string
+          ref_code?: string
+          resolution?: string
+          severity?: string
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string
+          due_date?: string | null
+          id?: string
+          owner?: string
+          project_id?: string
+          ref_code?: string
+          resolution?: string
+          severity?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ridac_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
