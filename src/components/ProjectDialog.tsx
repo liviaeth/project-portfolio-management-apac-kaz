@@ -48,7 +48,10 @@ export function ProjectDialog({
   const set = (patch: Draft) => setDraft((d) => ({ ...d, ...patch }));
 
   async function submit() {
-    if (!draft.name?.trim()) return toast.error("A project name is required.");
+    if (!draft.name?.trim()) {
+      toast.error("A project name is required.");
+      return;
+    }
     try {
       await save.mutateAsync({
         ...draft,
