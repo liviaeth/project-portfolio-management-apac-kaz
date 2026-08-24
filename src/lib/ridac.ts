@@ -90,6 +90,8 @@ export function isOverdue(item: RidacItem) {
 export function summariseCounts(items: RidacItem[]) {
   const open = items.filter((i) => isOpen(i.status));
   return {
+    open: open.length,
+    overdue: items.filter(isOverdue).length,
     R: open.filter((i) => i.type === "Risk").length,
     I: open.filter((i) => i.type === "Issue").length,
     D: open.filter((i) => i.type === "Decision").length,

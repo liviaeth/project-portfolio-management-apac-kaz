@@ -54,15 +54,23 @@ export function ItemDialog({
 
   useEffect(() => {
     if (open) {
-      setDraft(item ?? { ...empty, project_id: defaultProjectId ?? projects[0]?.id });
+      const pid = defaultProjectId ?? projects[0]?.id;
+      setDraft(item ?? (pid ? { ...empty, project_id: pid } : { ...empty }));
     }
   }, [open, item, defaultProjectId, projects]);
 
   const set = (patch: Draft) => setDraft((d) => ({ ...d, ...patch }));
 
   async function submit() {
-    if (!draft.title?.trim()) return toast.error("A title is required.");
-    if (!draft.project_id) return toast.error("Pick a project.");
+    if (!draft.title?.trim()) {
+      toast.error("A title is required.");
+      return;
+    }
+    if (!draft.project_id) {
+      toast.error("Pick a project.");
+      return;
+    }
+
     try {
       await save.mutateAsync({ ...draft, due_date: draft.due_date || null });
       toast.success(item ? "Item updated" : "Item added");
