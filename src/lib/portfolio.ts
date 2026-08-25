@@ -87,6 +87,9 @@ export function useRealtimePortfolio() {
       .on("postgres_changes", { event: "*", schema: "public", table: "ridac_items" }, () => {
         qc.invalidateQueries({ queryKey: ["ridac"] });
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "milestones" }, () => {
+        qc.invalidateQueries({ queryKey: ["milestones"] });
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
