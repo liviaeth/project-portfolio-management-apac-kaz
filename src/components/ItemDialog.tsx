@@ -68,7 +68,12 @@ export function ItemDialog({
   useEffect(() => {
     if (open) {
       const pid = defaultProjectId ?? projects[0]?.id;
-      setDraft(item ?? (pid ? { ...empty, project_id: pid } : { ...empty }));
+      setDraft(
+        item ??
+          (pid
+            ? { ...empty, project_id: pid, submission_date: today() }
+            : { ...empty, submission_date: today() }),
+      );
     }
   }, [open, item, defaultProjectId, projects]);
 
@@ -85,13 +90,18 @@ export function ItemDialog({
     }
 
     try {
-      await save.mutateAsync({ ...draft, due_date: draft.due_date || null });
+      await save.mutateAsync({
+        ...draft,
+        due_date: draft.due_date || null,
+        submission_date: draft.submission_date || null,
+      });
       toast.success(item ? "Item updated" : "Item added");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save the item");
     }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
