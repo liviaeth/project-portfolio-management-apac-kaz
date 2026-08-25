@@ -17,6 +17,20 @@ export type Health = (typeof HEALTHS)[number];
 export const PRIORITIES = ["Critical", "High", "Medium", "Low"] as const;
 export const SEVERITIES = ["Critical", "High", "Medium", "Low"] as const;
 export const STATUSES = ["Open", "In Progress", "In Review", "Blocked", "Closed"] as const;
+export const RISK_RESPONSES = ["Accept", "Transfer", "Mitigate", "Avoid"] as const;
+export const LIKELIHOODS = [
+  "Almost Certain",
+  "Likely",
+  "Possible",
+  "Unlikely",
+  "Rare",
+] as const;
+export const MILESTONE_STATUSES = [
+  "Not Started",
+  "In Progress",
+  "At Risk",
+  "Complete",
+] as const;
 
 export type Project = {
   id: string;
