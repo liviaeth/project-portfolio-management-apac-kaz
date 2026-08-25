@@ -17,6 +17,20 @@ export type Health = (typeof HEALTHS)[number];
 export const PRIORITIES = ["Critical", "High", "Medium", "Low"] as const;
 export const SEVERITIES = ["Critical", "High", "Medium", "Low"] as const;
 export const STATUSES = ["Open", "In Progress", "In Review", "Blocked", "Closed"] as const;
+export const RISK_RESPONSES = ["Accept", "Transfer", "Mitigate", "Avoid"] as const;
+export const LIKELIHOODS = [
+  "Almost Certain",
+  "Likely",
+  "Possible",
+  "Unlikely",
+  "Rare",
+] as const;
+export const MILESTONE_STATUSES = [
+  "Not Started",
+  "In Progress",
+  "At Risk",
+  "Complete",
+] as const;
 
 export type Project = {
   id: string;
@@ -45,9 +59,35 @@ export type RidacItem = {
   status: string;
   severity: string;
   due_date: string | null;
+  submission_date: string | null;
+  risk_response: string;
+  likelihood: string;
   resolution: string;
   created_at: string;
   updated_at: string;
+};
+
+export type Milestone = {
+  id: string;
+  project_id: string;
+  name: string;
+  detail: string;
+  owner: string;
+  phase: string;
+  status: string;
+  progress: number;
+  start_date: string | null;
+  end_date: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export const MILESTONE_BAR: Record<string, string> = {
+  "Not Started": "bg-muted-foreground/50",
+  "In Progress": "bg-primary",
+  "At Risk": "bg-status-amber",
+  Complete: "bg-status-green",
 };
 
 export const TYPE_SHORT: Record<string, string> = {

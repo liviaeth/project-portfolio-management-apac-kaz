@@ -1,7 +1,51 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Project, RidacItem } from "./ridac";
+import type { Milestone, Project, RidacItem } from "./ridac";
+
+export function useMilestones(projectId?: string) {
+  return useQuery({
+    queryKey: ["milestones", projectId ?? "all"],
+    queryFn: async (): Promise<Milestone[]> => {
+      let q = supabase.from("milestones").select("*");
+      if (projectId) q = q.eq("project_id", projectId);
+      const { data, error } = await q
+        .order("sort_order", { ascending: true })
+        .order("start_date", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return (data ?? []) as Milestone[];
+    },
+  });
+}
+
+export function useSaveMilestone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (m: Partial<Milestone> & { id?: string }) => {
+      if (m.id) {
+        const { id, ...rest } = m;
+        const { error } = await supabase.from("milestones").update(rest).eq("id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("milestones").insert(m as never);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["milestones"] }),
+  });
+}
+
+export function useDeleteMilestone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("milestones").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["milestones"] }),
+  });
+}
+
 
 export function useProjects() {
   return useQuery({
@@ -42,6 +86,9 @@ export function useRealtimePortfolio() {
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "ridac_items" }, () => {
         qc.invalidateQueries({ queryKey: ["ridac"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "milestones" }, () => {
+        qc.invalidateQueries({ queryKey: ["milestones"] });
       })
       .subscribe();
     return () => {

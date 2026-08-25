@@ -3,15 +3,24 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell, MetaChip } from "@/components/AppShell";
 import { AssistantPanel } from "@/components/AssistantPanel";
+import { GanttChart, MilestoneList } from "@/components/GanttChart";
 import { ItemDialog } from "@/components/ItemDialog";
+import { MilestoneDialog } from "@/components/MilestoneDialog";
 import { ProjectDialog } from "@/components/ProjectDialog";
 import { RidacTable } from "@/components/RidacTable";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useBulkInsertItems, useProjects, useRidacItems } from "@/lib/portfolio";
+import {
+  useBulkInsertItems,
+  useMilestones,
+  useProjects,
+  useRidacItems,
+} from "@/lib/portfolio";
 import {
   HEALTH_DOT,
+  LIKELIHOODS,
   RIDAC_TYPES,
+  RISK_RESPONSES,
   SEVERITIES,
   STATUSES,
   downloadCsv,
@@ -19,6 +28,7 @@ import {
   parseCsv,
   summariseCounts,
   toCsv,
+  type Milestone,
   type RidacItem,
 } from "@/lib/ridac";
 import { cn } from "@/lib/utils";
@@ -50,9 +60,13 @@ const CSV_HEADERS = [
   "Owner",
   "Status",
   "Severity",
+  "Risk Response",
+  "Likelihood",
+  "Submission Date",
   "Due Date",
   "Resolution",
 ];
+
 
 function ProjectPage() {
   const { projectId } = Route.useParams();
@@ -64,6 +78,7 @@ function ProjectPage() {
 
   const { data: projects = [] } = useProjects();
   const { data: items = [] } = useRidacItems(projectId);
+  const { data: milestones = [] } = useMilestones(projectId);
   const bulk = useBulkInsertItems();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -71,6 +86,10 @@ function ProjectPage() {
     open: false,
     item: null,
   });
+  const [milestoneDialog, setMilestoneDialog] = useState<{
+    open: boolean;
+    milestone: Milestone | null;
+  }>({ open: false, milestone: null });
   const [editProject, setEditProject] = useState(false);
 
   const project = projects.find((p) => p.id === projectId);
@@ -89,6 +108,9 @@ function ProjectPage() {
         i.owner,
         i.status,
         i.severity,
+        i.risk_response,
+        i.likelihood,
+        i.submission_date,
         i.due_date,
         i.resolution,
       ]),
@@ -117,6 +139,9 @@ function ProjectPage() {
         status: col("status"),
         severity: col("severity", "impact", "priority"),
         due: col("due date", "due", "target date"),
+        submitted: col("submission date", "submitted", "raised", "raised date", "date raised"),
+        response: col("risk response", "response", "treatment"),
+        likelihood: col("likelihood", "probability"),
         resolution: col("resolution", "mitigation", "action"),
       };
       if (idx.title === -1) throw new Error("Could not find a Title column in the file.");
@@ -125,18 +150,29 @@ function ProjectPage() {
       const payload = rows
         .slice(1)
         .filter((r) => get(r, idx.title))
-        .map((r) => ({
-          project_id: projectId,
-          ref_code: get(r, idx.ref),
-          type: matchOption(get(r, idx.type), RIDAC_TYPES, "Risk"),
-          title: get(r, idx.title),
-          detail: get(r, idx.detail),
-          owner: get(r, idx.owner),
-          status: matchOption(get(r, idx.status), STATUSES, "Open"),
-          severity: matchOption(get(r, idx.severity), SEVERITIES, "Medium"),
-          due_date: get(r, idx.due) || null,
-          resolution: get(r, idx.resolution),
-        }));
+        .map((r) => {
+          const type = matchOption(get(r, idx.type), RIDAC_TYPES, "Risk");
+          const responseRaw = get(r, idx.response);
+          const likelihoodRaw = get(r, idx.likelihood);
+          return {
+            project_id: projectId,
+            ref_code: get(r, idx.ref),
+            type,
+            title: get(r, idx.title),
+            detail: get(r, idx.detail),
+            owner: get(r, idx.owner),
+            status: matchOption(get(r, idx.status), STATUSES, "Open"),
+            severity: matchOption(get(r, idx.severity), SEVERITIES, "Medium"),
+            risk_response: responseRaw
+              ? matchOption(responseRaw, RISK_RESPONSES, "Mitigate")
+              : "",
+            likelihood: likelihoodRaw ? matchOption(likelihoodRaw, LIKELIHOODS, "Possible") : "",
+            due_date: get(r, idx.due) || null,
+            submission_date: get(r, idx.submitted) || null,
+            resolution: get(r, idx.resolution),
+          };
+        });
+
 
       if (payload.length === 0) throw new Error("No rows with a title were found.");
       await bulk.mutateAsync(payload);

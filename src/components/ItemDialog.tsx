@@ -18,10 +18,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RIDAC_TYPES, SEVERITIES, STATUSES, type Project, type RidacItem } from "@/lib/ridac";
+import {
+  LIKELIHOODS,
+  RIDAC_TYPES,
+  RISK_RESPONSES,
+  SEVERITIES,
+  STATUSES,
+  type Project,
+  type RidacItem,
+} from "@/lib/ridac";
 import { useDeleteItem, useSaveItem } from "@/lib/portfolio";
 
 type Draft = Partial<RidacItem>;
+
+const today = () => new Date().toISOString().slice(0, 10);
 
 const empty: Draft = {
   type: "Risk",
@@ -32,6 +42,9 @@ const empty: Draft = {
   severity: "Medium",
   ref_code: "",
   due_date: null,
+  submission_date: null,
+  risk_response: "",
+  likelihood: "",
   resolution: "",
 };
 
@@ -55,7 +68,12 @@ export function ItemDialog({
   useEffect(() => {
     if (open) {
       const pid = defaultProjectId ?? projects[0]?.id;
-      setDraft(item ?? (pid ? { ...empty, project_id: pid } : { ...empty }));
+      setDraft(
+        item ??
+          (pid
+            ? { ...empty, project_id: pid, submission_date: today() }
+            : { ...empty, submission_date: today() }),
+      );
     }
   }, [open, item, defaultProjectId, projects]);
 
@@ -72,13 +90,18 @@ export function ItemDialog({
     }
 
     try {
-      await save.mutateAsync({ ...draft, due_date: draft.due_date || null });
+      await save.mutateAsync({
+        ...draft,
+        due_date: draft.due_date || null,
+        submission_date: draft.submission_date || null,
+      });
       toast.success(item ? "Item updated" : "Item added");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save the item");
     }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,6 +171,13 @@ export function ItemDialog({
               options={SEVERITIES.map((s) => ({ value: s, label: s }))}
             />
           </Field>
+          <Field label="Submission date">
+            <Input
+              type="date"
+              value={draft.submission_date ?? ""}
+              onChange={(e) => set({ submission_date: e.target.value })}
+            />
+          </Field>
           <Field label="Due date">
             <Input
               type="date"
@@ -155,13 +185,35 @@ export function ItemDialog({
               onChange={(e) => set({ due_date: e.target.value })}
             />
           </Field>
-          <Field label="Resolution / mitigation">
-            <Input
-              value={draft.resolution ?? ""}
-              onChange={(e) => set({ resolution: e.target.value })}
-            />
-          </Field>
+          {draft.type === "Risk" && (
+            <>
+              <Field label="Risk response">
+                <Picker
+                  value={draft.risk_response || "Mitigate"}
+                  onChange={(v) => set({ risk_response: v })}
+                  options={RISK_RESPONSES.map((r) => ({ value: r, label: r }))}
+                />
+              </Field>
+              <Field label="Likelihood">
+                <Picker
+                  value={draft.likelihood || "Possible"}
+                  onChange={(v) => set({ likelihood: v })}
+                  options={LIKELIHOODS.map((l) => ({ value: l, label: l }))}
+                />
+              </Field>
+            </>
+          )}
+          <div className="col-span-2">
+            <Field label="Resolution / mitigation">
+              <Textarea
+                rows={2}
+                value={draft.resolution ?? ""}
+                onChange={(e) => set({ resolution: e.target.value })}
+              />
+            </Field>
+          </div>
         </div>
+
 
         <DialogFooter className="justify-between sm:justify-between">
           {item ? (
