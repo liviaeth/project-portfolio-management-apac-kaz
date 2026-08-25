@@ -1,14 +1,21 @@
-# Welcome to your Lovable project
+# Project Pal
+
+help me to build web app for portfolio management. I need to track around 10 projects. 
+Especially RIDAC - Risks, Issues, Decisions, Actions and Change Requets, Dependancies per project . And maybe one seprate for portfolio management tenplate with overall proect health and priority. 
+
+Something that I can feed-up with real time. UI could be similar to csv files. Ideally I would have an agent (assistant) that can help track project progress and actions assigments for staff.
 
 This project was built with [Lovable](https://lovable.dev).
 
+**Live app**: https://project-portfolio-management-apac-kaz.lovable.app
+
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/3818348e-9a32-433d-8103-65f64ba63770).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +27,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
