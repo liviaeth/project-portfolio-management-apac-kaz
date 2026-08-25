@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      milestones: {
+        Row: {
+          created_at: string
+          detail: string
+          end_date: string | null
+          id: string
+          name: string
+          owner: string
+          phase: string
+          progress: number
+          project_id: string
+          sort_order: number
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string
+          end_date?: string | null
+          id?: string
+          name: string
+          owner?: string
+          phase?: string
+          progress?: number
+          project_id: string
+          sort_order?: number
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          owner?: string
+          phase?: string
+          progress?: number
+          project_id?: string
+          sort_order?: number
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -89,12 +145,15 @@ export type Database = {
           detail: string
           due_date: string | null
           id: string
+          likelihood: string
           owner: string
           project_id: string
           ref_code: string
           resolution: string
+          risk_response: string
           severity: string
           status: string
+          submission_date: string | null
           title: string
           type: string
           updated_at: string
@@ -104,12 +163,15 @@ export type Database = {
           detail?: string
           due_date?: string | null
           id?: string
+          likelihood?: string
           owner?: string
           project_id: string
           ref_code?: string
           resolution?: string
+          risk_response?: string
           severity?: string
           status?: string
+          submission_date?: string | null
           title: string
           type?: string
           updated_at?: string
@@ -119,12 +181,15 @@ export type Database = {
           detail?: string
           due_date?: string | null
           id?: string
+          likelihood?: string
           owner?: string
           project_id?: string
           ref_code?: string
           resolution?: string
+          risk_response?: string
           severity?: string
           status?: string
+          submission_date?: string | null
           title?: string
           type?: string
           updated_at?: string
