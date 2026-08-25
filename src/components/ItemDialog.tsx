@@ -18,10 +18,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RIDAC_TYPES, SEVERITIES, STATUSES, type Project, type RidacItem } from "@/lib/ridac";
+import {
+  LIKELIHOODS,
+  RIDAC_TYPES,
+  RISK_RESPONSES,
+  SEVERITIES,
+  STATUSES,
+  type Project,
+  type RidacItem,
+} from "@/lib/ridac";
 import { useDeleteItem, useSaveItem } from "@/lib/portfolio";
 
 type Draft = Partial<RidacItem>;
+
+const today = () => new Date().toISOString().slice(0, 10);
 
 const empty: Draft = {
   type: "Risk",
@@ -32,6 +42,9 @@ const empty: Draft = {
   severity: "Medium",
   ref_code: "",
   due_date: null,
+  submission_date: null,
+  risk_response: "",
+  likelihood: "",
   resolution: "",
 };
 
