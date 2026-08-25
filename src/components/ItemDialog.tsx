@@ -171,6 +171,13 @@ export function ItemDialog({
               options={SEVERITIES.map((s) => ({ value: s, label: s }))}
             />
           </Field>
+          <Field label="Submission date">
+            <Input
+              type="date"
+              value={draft.submission_date ?? ""}
+              onChange={(e) => set({ submission_date: e.target.value })}
+            />
+          </Field>
           <Field label="Due date">
             <Input
               type="date"
@@ -178,13 +185,35 @@ export function ItemDialog({
               onChange={(e) => set({ due_date: e.target.value })}
             />
           </Field>
-          <Field label="Resolution / mitigation">
-            <Input
-              value={draft.resolution ?? ""}
-              onChange={(e) => set({ resolution: e.target.value })}
-            />
-          </Field>
+          {draft.type === "Risk" && (
+            <>
+              <Field label="Risk response">
+                <Picker
+                  value={draft.risk_response || "Mitigate"}
+                  onChange={(v) => set({ risk_response: v })}
+                  options={RISK_RESPONSES.map((r) => ({ value: r, label: r }))}
+                />
+              </Field>
+              <Field label="Likelihood">
+                <Picker
+                  value={draft.likelihood || "Possible"}
+                  onChange={(v) => set({ likelihood: v })}
+                  options={LIKELIHOODS.map((l) => ({ value: l, label: l }))}
+                />
+              </Field>
+            </>
+          )}
+          <div className="col-span-2">
+            <Field label="Resolution / mitigation">
+              <Textarea
+                rows={2}
+                value={draft.resolution ?? ""}
+                onChange={(e) => set({ resolution: e.target.value })}
+              />
+            </Field>
+          </div>
         </div>
+
 
         <DialogFooter className="justify-between sm:justify-between">
           {item ? (
