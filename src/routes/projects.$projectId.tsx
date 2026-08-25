@@ -3,15 +3,24 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell, MetaChip } from "@/components/AppShell";
 import { AssistantPanel } from "@/components/AssistantPanel";
+import { GanttChart, MilestoneList } from "@/components/GanttChart";
 import { ItemDialog } from "@/components/ItemDialog";
+import { MilestoneDialog } from "@/components/MilestoneDialog";
 import { ProjectDialog } from "@/components/ProjectDialog";
 import { RidacTable } from "@/components/RidacTable";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useBulkInsertItems, useProjects, useRidacItems } from "@/lib/portfolio";
+import {
+  useBulkInsertItems,
+  useMilestones,
+  useProjects,
+  useRidacItems,
+} from "@/lib/portfolio";
 import {
   HEALTH_DOT,
+  LIKELIHOODS,
   RIDAC_TYPES,
+  RISK_RESPONSES,
   SEVERITIES,
   STATUSES,
   downloadCsv,
@@ -19,6 +28,7 @@ import {
   parseCsv,
   summariseCounts,
   toCsv,
+  type Milestone,
   type RidacItem,
 } from "@/lib/ridac";
 import { cn } from "@/lib/utils";
@@ -50,9 +60,13 @@ const CSV_HEADERS = [
   "Owner",
   "Status",
   "Severity",
+  "Risk Response",
+  "Likelihood",
+  "Submission Date",
   "Due Date",
   "Resolution",
 ];
+
 
 function ProjectPage() {
   const { projectId } = Route.useParams();
