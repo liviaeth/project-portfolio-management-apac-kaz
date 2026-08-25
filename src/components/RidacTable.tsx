@@ -77,6 +77,10 @@ export function RidacTable({
                 <th className="px-4 py-3">Owner</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Severity</th>
+                <th className="px-4 py-3">Response</th>
+                <th className="px-4 py-3">Likelihood</th>
+                <th className="px-4 py-3">Resolution / mitigation</th>
+                <th className="px-4 py-3">Submitted</th>
                 <th className="px-4 py-3">Due</th>
               </tr>
             </thead>
@@ -117,6 +121,18 @@ export function RidacTable({
                   >
                     {i.severity}
                   </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {i.risk_response || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {i.likelihood || "—"}
+                  </td>
+                  <td className="max-w-xs truncate px-4 py-3 text-xs text-muted-foreground">
+                    {i.resolution || "—"}
+                  </td>
+                  <td className="tabular px-4 py-3 font-mono text-xs text-muted-foreground">
+                    {i.submission_date ?? "—"}
+                  </td>
                   <td
                     className={cn(
                       "tabular px-4 py-3 font-mono text-xs",
@@ -130,7 +146,7 @@ export function RidacTable({
               {filtered.length === 0 && (
                 <tr>
                   <td
-                    colSpan={showProject ? 8 : 7}
+                    colSpan={showProject ? 12 : 11}
                     className="px-4 py-10 text-center text-sm text-muted-foreground"
                   >
                     No items match these filters.
@@ -139,6 +155,7 @@ export function RidacTable({
               )}
             </tbody>
           </table>
+
         </div>
       </div>
     </div>
