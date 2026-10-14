@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AssistantPanel } from "@/components/AssistantPanel";
 import { ProjectDialog } from "@/components/ProjectDialog";
@@ -9,6 +10,7 @@ import { useProjects, useRidacItems } from "@/lib/portfolio";
 import {
   HEALTH_DOT,
   HEALTH_LABEL,
+  PRIORITIES,
   isOpen,
   isOverdue,
   summariseCounts,
@@ -49,6 +51,43 @@ function Dashboard() {
     open: false,
     project: null,
   });
+  const [sortBy, setSortBy] = useState<{ col: "priority" | "target"; dir: "asc" | "desc" } | null>(
+    null,
+  );
+
+  function toggleSort(col: "priority" | "target") {
+    setSortBy((prev) => {
+      if (!prev || prev.col !== col) return { col, dir: "asc" };
+      return { col, dir: prev.dir === "asc" ? "desc" : "asc" };
+    });
+  }
+
+  const sortedProjects = useMemo(() => {
+    if (!sortBy) return projects;
+    const arr = [...projects];
+    if (sortBy.col === "priority") {
+      const rank = (p: string) => {
+        const idx = PRIORITIES.indexOf(p as (typeof PRIORITIES)[number]);
+        return idx === -1 ? PRIORITIES.length : idx;
+      };
+      arr.sort((a, b) => {
+        const diff = rank(a.priority) - rank(b.priority);
+        return sortBy.dir === "asc" ? diff : -diff;
+      });
+    } else {
+      const time = (d: string | null) => (d ? new Date(d).getTime() : null);
+      arr.sort((a, b) => {
+        const ta = time(a.target_date);
+        const tb = time(b.target_date);
+        if (ta === null && tb === null) return 0;
+        if (ta === null) return 1;
+        if (tb === null) return -1;
+        const diff = ta - tb;
+        return sortBy.dir === "asc" ? diff : -diff;
+      });
+    }
+    return arr;
+  }, [projects, sortBy]);
 
   const stats = useMemo(() => {
     const open = items.filter((i) => isOpen(i.status));
@@ -89,14 +128,30 @@ function Dashboard() {
                 <tr>
                   <th className="px-4 py-3">Project</th>
                   <th className="px-4 py-3">Phase</th>
-                  <th className="px-4 py-3">Priority</th>
+                  <th
+                    className="cursor-pointer select-none px-4 py-3 hover:text-foreground"
+                    onClick={() => toggleSort("priority")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Priority
+                      <SortIcon active={sortBy?.col === "priority"} dir={sortBy?.dir} />
+                    </span>
+                  </th>
                   <th className="px-4 py-3">Health</th>
                   <th className="px-4 py-3">Open / Overdue</th>
-                  <th className="px-4 py-3">Target</th>
+                  <th
+                    className="cursor-pointer select-none px-4 py-3 hover:text-foreground"
+                    onClick={() => toggleSort("target")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Target
+                      <SortIcon active={sortBy?.col === "target"} dir={sortBy?.dir} />
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {projects.map((p) => {
+                {sortedProjects.map((p) => {
                   const own = items.filter((i) => i.project_id === p.id);
                   const c = summariseCounts(own);
                   return (
@@ -154,6 +209,11 @@ function Dashboard() {
       />
     </AppShell>
   );
+}
+
+function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" | undefined }) {
+  if (!active) return <ArrowUpDown className="size-3 opacity-40" />;
+  return dir === "desc" ? <ArrowDown className="size-3" /> : <ArrowUp className="size-3" />;
 }
 
 function Kpi({

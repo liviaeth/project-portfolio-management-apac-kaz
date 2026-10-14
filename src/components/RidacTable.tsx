@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import {
   RIDAC_TYPES,
+  SEVERITIES,
   TYPE_SHORT,
   TYPE_TEXT,
   isOverdue,
@@ -24,6 +26,16 @@ export function RidacTable({
   const [type, setType] = useState<string>("All");
   const [query, setQuery] = useState("");
   const [openOnly, setOpenOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<{ col: "severity" | "due"; dir: "asc" | "desc" } | null>(
+    null,
+  );
+
+  function toggleSort(col: "severity" | "due") {
+    setSortBy((prev) => {
+      if (!prev || prev.col !== col) return { col, dir: "asc" };
+      return { col, dir: prev.dir === "asc" ? "desc" : "asc" };
+    });
+  }
 
   const projectName = useMemo(
     () => new Map(projects.map((p) => [p.id, p.name])),
@@ -40,6 +52,33 @@ export function RidacTable({
     }
     return true;
   });
+
+  const sorted = useMemo(() => {
+    if (!sortBy) return filtered;
+    const arr = [...filtered];
+    if (sortBy.col === "severity") {
+      const rank = (s: string) => {
+        const idx = SEVERITIES.indexOf(s as (typeof SEVERITIES)[number]);
+        return idx === -1 ? SEVERITIES.length : idx;
+      };
+      arr.sort((a, b) => {
+        const diff = rank(a.severity) - rank(b.severity);
+        return sortBy.dir === "asc" ? diff : -diff;
+      });
+    } else {
+      const time = (d: string | null) => (d ? new Date(d).getTime() : null);
+      arr.sort((a, b) => {
+        const ta = time(a.due_date);
+        const tb = time(b.due_date);
+        if (ta === null && tb === null) return 0;
+        if (ta === null) return 1;
+        if (tb === null) return -1;
+        const diff = ta - tb;
+        return sortBy.dir === "asc" ? diff : -diff;
+      });
+    }
+    return arr;
+  }, [filtered, sortBy]);
 
   const counts = (t: string) => items.filter((i) => i.type === t).length;
 
@@ -76,20 +115,39 @@ export function RidacTable({
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Owner</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Severity</th>
-                <th className="px-4 py-3">Response</th>
-                <th className="px-4 py-3">Likelihood</th>
+                <th
+                  className="cursor-pointer select-none px-4 py-3 hover:text-foreground"
+                  onClick={() => toggleSort("severity")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Severity
+                    <SortIcon active={sortBy?.col === "severity"} dir={sortBy?.dir} />
+                  </span>
+                </th>
                 <th className="px-4 py-3">Resolution / mitigation</th>
                 <th className="px-4 py-3">Submitted</th>
-                <th className="px-4 py-3">Due</th>
+                <th
+                  className="cursor-pointer select-none px-4 py-3 hover:text-foreground"
+                  onClick={() => toggleSort("due")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Due
+                    <SortIcon active={sortBy?.col === "due"} dir={sortBy?.dir} />
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((i) => (
+              {sorted.map((i) => (
                 <tr
                   key={i.id}
                   onClick={() => onOpen(i)}
-                  className="cursor-pointer transition-colors hover:bg-secondary/60"
+                  className={cn(
+                    "cursor-pointer transition-colors hover:bg-secondary/60",
+                    i.status === "Closed" && "bg-status-green/15 hover:bg-status-green/20",
+                    i.status === "In Review" && "bg-status-green/10 hover:bg-status-green/15",
+                    i.status === "Blocked" && "bg-status-red/10 hover:bg-status-red/15",
+                  )}
                 >
                   <td className="px-4 py-3">
                     <span
@@ -121,12 +179,6 @@ export function RidacTable({
                   >
                     {i.severity}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {i.risk_response || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {i.likelihood || "—"}
-                  </td>
                   <td className="max-w-xs truncate px-4 py-3 text-xs text-muted-foreground">
                     {i.resolution || "—"}
                   </td>
@@ -146,7 +198,7 @@ export function RidacTable({
               {filtered.length === 0 && (
                 <tr>
                   <td
-                    colSpan={showProject ? 12 : 11}
+                    colSpan={showProject ? 10 : 9}
                     className="px-4 py-10 text-center text-sm text-muted-foreground"
                   >
                     No items match these filters.
@@ -160,6 +212,11 @@ export function RidacTable({
       </div>
     </div>
   );
+}
+
+function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" | undefined }) {
+  if (!active) return <ArrowUpDown className="size-3 opacity-40" />;
+  return dir === "desc" ? <ArrowDown className="size-3" /> : <ArrowUp className="size-3" />;
 }
 
 function FilterChip({

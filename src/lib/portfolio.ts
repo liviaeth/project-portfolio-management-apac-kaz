@@ -166,3 +166,14 @@ export function useBulkInsertItems() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ridac"] }),
   });
 }
+
+export function useBulkInsertMilestones() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (milestones: Partial<Milestone>[]) => {
+      const { error } = await supabase.from("milestones").insert(milestones as never);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["milestones"] }),
+  });
+}

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useBulkInsertItems,
+  useBulkInsertMilestones,
   useMilestones,
   useProjects,
   useRidacItems,
@@ -19,6 +20,8 @@ import {
 import {
   HEALTH_DOT,
   LIKELIHOODS,
+  MILESTONE_STATUSES,
+  PHASES,
   RIDAC_TYPES,
   RISK_RESPONSES,
   SEVERITIES,
@@ -80,7 +83,9 @@ function ProjectPage() {
   const { data: items = [] } = useRidacItems(projectId);
   const { data: milestones = [] } = useMilestones(projectId);
   const bulk = useBulkInsertItems();
+  const bulkMilestones = useBulkInsertMilestones();
   const fileRef = useRef<HTMLInputElement>(null);
+  const milestoneFileRef = useRef<HTMLInputElement>(null);
 
   const [itemDialog, setItemDialog] = useState<{ open: boolean; item: RidacItem | null }>({
     open: false,
@@ -182,6 +187,59 @@ function ProjectPage() {
     }
   }
 
+  async function importMilestonesCsv(file: File) {
+    try {
+      const rows = parseCsv(await file.text());
+      if (rows.length < 2) throw new Error("The file has no data rows.");
+      const header = rows[0]!.map((h) => h.trim().toLowerCase());
+      const col = (...names: string[]) => {
+        for (const n of names) {
+          const idx = header.indexOf(n);
+          if (idx !== -1) return idx;
+        }
+        return -1;
+      };
+      const idx = {
+        name: col("name", "milestone", "task name", "title"),
+        detail: col("detail", "details", "notes"),
+        owner: col("owner", "assignee", "assigned to"),
+        phase: col("phase"),
+        status: col("status"),
+        progress: col("progress", "% complete", "percent complete"),
+        start: col("start date", "start"),
+        end: col("end date", "end", "due date"),
+      };
+      if (idx.name === -1) throw new Error("Could not find a Name column in the file.");
+
+      const get = (r: string[], i: number) => (i === -1 ? "" : (r[i] ?? "").trim());
+      const payload = rows
+        .slice(1)
+        .filter((r) => get(r, idx.name))
+        .map((r, i) => {
+          const progressRaw = get(r, idx.progress);
+          const progress = progressRaw ? Math.round(Number(progressRaw)) : 0;
+          return {
+            project_id: projectId,
+            name: get(r, idx.name),
+            detail: get(r, idx.detail),
+            owner: get(r, idx.owner),
+            phase: matchOption(get(r, idx.phase), PHASES, "Design"),
+            status: matchOption(get(r, idx.status), MILESTONE_STATUSES, "Not Started"),
+            progress: Number.isFinite(progress) ? Math.max(0, Math.min(100, progress)) : 0,
+            start_date: get(r, idx.start) || null,
+            end_date: get(r, idx.end) || null,
+            sort_order: i,
+          };
+        });
+
+      if (payload.length === 0) throw new Error("No rows with a name were found.");
+      await bulkMilestones.mutateAsync(payload);
+      toast.success(`Imported ${payload.length} milestones`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Import failed");
+    }
+  }
+
   return (
     <AppShell
       title={project?.name ?? "Project"}
@@ -219,6 +277,27 @@ function ProjectPage() {
           <Button size="sm" variant="outline" onClick={() => setEditProject(true)}>
             Edit project
           </Button>
+          <input
+            ref={milestoneFileRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importMilestonesCsv(f);
+              e.target.value = "";
+            }}
+          />
+          <Button size="sm" variant="outline" onClick={() => milestoneFileRef.current?.click()}>
+            Import milestones
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setMilestoneDialog({ open: true, milestone: null })}
+          >
+            New milestone
+          </Button>
           <Button size="sm" onClick={() => setItemDialog({ open: true, item: null })}>
             New item
           </Button>
@@ -241,11 +320,28 @@ function ProjectPage() {
           </section>
 
           <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
-            <RidacTable
-              items={items}
-              projects={projects}
-              onOpen={(item) => setItemDialog({ open: true, item })}
-            />
+            <div className="space-y-8">
+              <section className="space-y-3">
+                <h2 className="text-sm font-semibold text-foreground">Milestones</h2>
+                <GanttChart
+                  milestones={milestones}
+                  onOpen={(m) => setMilestoneDialog({ open: true, milestone: m })}
+                />
+                <MilestoneList
+                  milestones={milestones}
+                  onOpen={(m) => setMilestoneDialog({ open: true, milestone: m })}
+                />
+              </section>
+
+              <section className="space-y-3">
+                <h2 className="text-sm font-semibold text-foreground">RIDAC log</h2>
+                <RidacTable
+                  items={items}
+                  projects={projects}
+                  onOpen={(item) => setItemDialog({ open: true, item })}
+                />
+              </section>
+            </div>
             <AssistantPanel projectId={projectId} />
           </div>
         </>
@@ -257,6 +353,12 @@ function ProjectPage() {
         projects={projects}
         defaultProjectId={projectId}
         onOpenChange={(open) => setItemDialog((d) => ({ ...d, open }))}
+      />
+      <MilestoneDialog
+        open={milestoneDialog.open}
+        milestone={milestoneDialog.milestone}
+        projectId={projectId}
+        onOpenChange={(open) => setMilestoneDialog((d) => ({ ...d, open }))}
       />
       <ProjectDialog
         open={editProject}
