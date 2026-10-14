@@ -179,12 +179,32 @@ export function useBulkInsertMilestones() {
 }
 
 /**
- * Whether the signed-in user has been invited into the workspace.
+ * The signed-in user's own membership row, or null if they have none.
  *
  * The database is the real boundary -- RLS gates every table on
  * public.is_member() -- so this only exists to tell "you have no access"
- * apart from "there is no data yet".
+ * apart from "there is no data yet", and to know whether to show owner-only
+ * UI such as the members admin page.
  */
+export function useMembership() {
+  return useQuery({
+    queryKey: ["membership"],
+    queryFn: async (): Promise<{ role: string } | null> => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return null;
+      const { data, error } = await supabase
+        .from("app_members")
+        .select("role")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60_000,
+  });
+}
+
 export function useIsMember() {
   return useQuery({
     queryKey: ["is-member"],

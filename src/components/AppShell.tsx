@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useProjects, useRealtimePortfolio } from "@/lib/portfolio";
+import { useMembership, useProjects, useRealtimePortfolio } from "@/lib/portfolio";
 import { HEALTH_DOT } from "@/lib/ridac";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,7 @@ export function AppShell({
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: projects = [] } = useProjects();
+  const { data: membership } = useMembership();
   useRealtimePortfolio();
 
   const initials = (user?.email ?? "?").slice(0, 2).toUpperCase();
@@ -66,6 +67,20 @@ export function AppShell({
               <span className="truncate">{p.name}</span>
             </Link>
           ))}
+          {membership?.role === "owner" && (
+            <>
+              <div className="px-3 pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-nav-muted">
+                Workspace
+              </div>
+              <Link
+                to="/admin"
+                className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-nav-foreground/80 transition-colors hover:bg-nav-foreground/5"
+                activeProps={{ className: "bg-nav-foreground/10 text-nav-foreground" }}
+              >
+                Members
+              </Link>
+            </>
+          )}
         </nav>
         <div className="border-t border-nav-foreground/10 p-4">
           <div className="flex items-center gap-3 px-3 py-2">

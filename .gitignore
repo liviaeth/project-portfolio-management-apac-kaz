@@ -20,6 +20,13 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Secrets - .env currently only holds the public Supabase keys, but it's
+# about to also hold SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS entirely
+# and must never reach git history.
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
