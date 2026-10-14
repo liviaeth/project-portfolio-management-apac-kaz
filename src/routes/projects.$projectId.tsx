@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell, MetaChip } from "@/components/AppShell";
+import { NoAccess } from "@/components/NoAccess";
 import { AssistantPanel } from "@/components/AssistantPanel";
 import { GanttChart, MilestoneList } from "@/components/GanttChart";
 import { ItemDialog } from "@/components/ItemDialog";
@@ -13,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   useBulkInsertItems,
   useBulkInsertMilestones,
+  useIsMember,
   useMilestones,
   useProjects,
   useRidacItems,
@@ -82,6 +84,7 @@ function ProjectPage() {
   const { data: projects = [] } = useProjects();
   const { data: items = [] } = useRidacItems(projectId);
   const { data: milestones = [] } = useMilestones(projectId);
+  const { data: isMember } = useIsMember();
   const bulk = useBulkInsertItems();
   const bulkMilestones = useBulkInsertMilestones();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -99,6 +102,7 @@ function ProjectPage() {
 
   const project = projects.find((p) => p.id === projectId);
   if (!session) return null;
+  if (isMember === false) return <NoAccess />;
 
   const counts = summariseCounts(items);
 

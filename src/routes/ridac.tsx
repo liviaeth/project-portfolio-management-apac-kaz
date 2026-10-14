@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { NoAccess } from "@/components/NoAccess";
 import { AssistantPanel } from "@/components/AssistantPanel";
 import { ItemDialog } from "@/components/ItemDialog";
 import { RidacTable } from "@/components/RidacTable";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useProjects, useRidacItems } from "@/lib/portfolio";
+import { useIsMember, useProjects, useRidacItems } from "@/lib/portfolio";
 import { downloadCsv, toCsv, type RidacItem } from "@/lib/ridac";
 
 export const Route = createFileRoute("/ridac")({
@@ -38,12 +39,14 @@ function RidacCentral() {
 
   const { data: projects = [] } = useProjects();
   const { data: items = [] } = useRidacItems();
+  const { data: isMember } = useIsMember();
   const [dialog, setDialog] = useState<{ open: boolean; item: RidacItem | null }>({
     open: false,
     item: null,
   });
 
   if (!session) return null;
+  if (isMember === false) return <NoAccess />;
 
   function exportAll() {
     const names = new Map(projects.map((p) => [p.id, p.name]));

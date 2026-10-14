@@ -177,3 +177,29 @@ export function useBulkInsertMilestones() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["milestones"] }),
   });
 }
+
+/**
+ * Whether the signed-in user has been invited into the workspace.
+ *
+ * The database is the real boundary -- RLS gates every table on
+ * public.is_member() -- so this only exists to tell "you have no access"
+ * apart from "there is no data yet".
+ */
+export function useIsMember() {
+  return useQuery({
+    queryKey: ["is-member"],
+    queryFn: async (): Promise<boolean> => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return false;
+      const { data, error } = await supabase
+        .from("app_members")
+        .select("user_id")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (error) throw error;
+      return data !== null;
+    },
+    staleTime: 60_000,
+  });
+}

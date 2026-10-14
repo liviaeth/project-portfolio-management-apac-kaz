@@ -2,11 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { NoAccess } from "@/components/NoAccess";
 import { AssistantPanel } from "@/components/AssistantPanel";
 import { ProjectDialog } from "@/components/ProjectDialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useProjects, useRidacItems } from "@/lib/portfolio";
+import { useIsMember, useProjects, useRidacItems } from "@/lib/portfolio";
 import {
   HEALTH_DOT,
   HEALTH_LABEL,
@@ -47,6 +48,7 @@ function Dashboard() {
 
   const { data: projects = [] } = useProjects();
   const { data: items = [] } = useRidacItems();
+  const { data: isMember } = useIsMember();
   const [dialog, setDialog] = useState<{ open: boolean; project: Project | null }>({
     open: false,
     project: null,
@@ -100,6 +102,7 @@ function Dashboard() {
   }, [projects, items]);
 
   if (!session) return null;
+  if (isMember === false) return <NoAccess />;
 
   return (
     <AppShell

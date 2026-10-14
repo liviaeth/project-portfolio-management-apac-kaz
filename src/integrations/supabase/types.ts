@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_members: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          invited_by?: string
+          role?: string
+          user_id?: string | null
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       milestones: {
         Row: {
           created_at: string
@@ -209,7 +239,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_member: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
