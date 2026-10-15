@@ -240,6 +240,26 @@ function ProjectPage() {
             <Stat label="Owner" text={project.owner || "Unassigned"} />
           </section>
 
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                Milestones &amp; Gantt
+              </h2>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setMilestoneDialog({ open: true, milestone: null })}
+              >
+                Add milestone
+              </Button>
+            </div>
+            <GanttChart milestones={milestones} />
+            <MilestoneList
+              milestones={milestones}
+              onOpen={(milestone) => setMilestoneDialog({ open: true, milestone })}
+            />
+          </section>
+
           <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
             <RidacTable
               items={items}
@@ -250,6 +270,13 @@ function ProjectPage() {
           </div>
         </>
       )}
+
+      <MilestoneDialog
+        open={milestoneDialog.open}
+        milestone={milestoneDialog.milestone}
+        projectId={projectId}
+        onOpenChange={(open) => setMilestoneDialog((d) => ({ ...d, open }))}
+      />
 
       <ItemDialog
         open={itemDialog.open}
