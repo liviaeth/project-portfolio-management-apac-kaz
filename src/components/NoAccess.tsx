@@ -31,6 +31,11 @@ export function NoAccess() {
             )}{" "}
             Ask a workspace administrator to invite you, then sign in again.
           </p>
+          {user?.id && (
+            <p className="break-all font-mono text-[10px] text-muted-foreground/60">
+              user id: {user.id}
+            </p>
+          )}
           <Button
             variant="outline"
             className="w-full"
