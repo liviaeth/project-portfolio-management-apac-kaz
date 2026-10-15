@@ -22,6 +22,19 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
+// Postgrest errors carry the real fix in `hint`/`code`, not `message` --
+// logging the full object (not just .message) is what the docs recommend.
+// Duck-typed rather than `instanceof Error` so it also handles plain
+// { message, hint, code } objects that never go through an Error subclass.
+function errorMessage(err: unknown, fallback: string): string {
+  console.error(err);
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
+    return err.message;
+  }
+  return fallback;
+}
+
 type Member = {
   id: string;
   email: string;
@@ -90,7 +103,7 @@ function MembersPanel() {
       qc.invalidateQueries({ queryKey: ["app-members"] });
     },
     onError: (err) => {
-      const message = err instanceof Error ? err.message : "Could not send invite";
+      const message = errorMessage(err, "Could not send invite");
       toast.error(
         message.includes("duplicate") || message.includes("app_members_email_lower_idx")
           ? "That email is already invited or a member."
@@ -115,7 +128,7 @@ function MembersPanel() {
       toast.success("Access revoked");
       qc.invalidateQueries({ queryKey: ["app-members"] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not revoke access"),
+    onError: (err) => toast.error(errorMessage(err, "Could not revoke access")),
   });
 
   return (
