@@ -37,6 +37,7 @@ function errorMessage(err: unknown, fallback: string): string {
 
 type Member = {
   id: string;
+  user_id: string | null;
   email: string;
   role: string;
   invited_by: string;
@@ -79,7 +80,7 @@ function MembersPanel() {
     queryFn: async (): Promise<Member[]> => {
       const { data, error } = await supabase
         .from("app_members")
-        .select("id, email, role, invited_by, created_at, claimed_at")
+        .select("id, user_id, email, role, invited_by, created_at, claimed_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -114,7 +115,10 @@ function MembersPanel() {
 
   const revoke = useMutation({
     mutationFn: async (target: Member) => {
-      if (target.email.toLowerCase() === user?.email?.toLowerCase()) {
+      // Exact id comparison, not email string matching: the database now
+      // refuses this at the RLS/trigger level too (migration 20261015030000),
+      // so this is purely a faster, friendlier message, not the real guard.
+      if (target.user_id && target.user_id === user?.id) {
         throw new Error("You can't remove your own access.");
       }
       if (target.role === "owner") {
