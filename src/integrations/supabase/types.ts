@@ -240,6 +240,7 @@ export type Database = {
     }
     Functions: {
       is_member: { Args: never; Returns: boolean }
+      is_owner: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
