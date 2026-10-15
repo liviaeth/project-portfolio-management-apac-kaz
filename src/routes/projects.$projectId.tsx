@@ -72,7 +72,6 @@ const CSV_HEADERS = [
   "Resolution",
 ];
 
-
 function ProjectPage() {
   const { projectId } = Route.useParams();
   const { session, loading } = useAuth();
@@ -181,7 +180,6 @@ function ProjectPage() {
             resolution: get(r, idx.resolution),
           };
         });
-
 
       if (payload.length === 0) throw new Error("No rows with a title were found.");
       await bulk.mutateAsync(payload);
@@ -351,18 +349,19 @@ function ProjectPage() {
         </>
       )}
 
+      <MilestoneDialog
+        open={milestoneDialog.open}
+        milestone={milestoneDialog.milestone}
+        projectId={projectId}
+        onOpenChange={(open) => setMilestoneDialog((d) => ({ ...d, open }))}
+      />
+
       <ItemDialog
         open={itemDialog.open}
         item={itemDialog.item}
         projects={projects}
         defaultProjectId={projectId}
         onOpenChange={(open) => setItemDialog((d) => ({ ...d, open }))}
-      />
-      <MilestoneDialog
-        open={milestoneDialog.open}
-        milestone={milestoneDialog.milestone}
-        projectId={projectId}
-        onOpenChange={(open) => setMilestoneDialog((d) => ({ ...d, open }))}
       />
       <ProjectDialog
         open={editProject}
