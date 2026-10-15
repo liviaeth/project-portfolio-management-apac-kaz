@@ -253,7 +253,10 @@ function ProjectPage() {
                 Add milestone
               </Button>
             </div>
-            <GanttChart milestones={milestones} />
+            <GanttChart
+              milestones={milestones}
+              onOpen={(milestone) => setMilestoneDialog({ open: true, milestone })}
+            />
             <MilestoneList
               milestones={milestones}
               onOpen={(milestone) => setMilestoneDialog({ open: true, milestone })}
