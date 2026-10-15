@@ -46,7 +46,6 @@ export function useDeleteMilestone() {
   });
 }
 
-
 export function useProjects() {
   return useQuery({
     queryKey: ["projects"],
@@ -190,8 +189,13 @@ export function useMembership() {
   return useQuery({
     queryKey: ["membership"],
     queryFn: async (): Promise<{ role: string } | null> => {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth.user?.id;
+      // getSession() reads the session already stored locally by sign-in --
+      // no network round-trip. getUser() re-verifies the token against the
+      // server on every call, which can race right after a fresh sign-in
+      // (and did: it's what threw the 403 seen in testing), caching a wrong
+      // "not a member" result for up to staleTime.
+      const { data: auth } = await supabase.auth.getSession();
+      const uid = auth.session?.user?.id;
       if (!uid) return null;
       const { data, error } = await supabase
         .from("app_members")
@@ -209,8 +213,10 @@ export function useIsMember() {
   return useQuery({
     queryKey: ["is-member"],
     queryFn: async (): Promise<boolean> => {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth.user?.id;
+      // See useMembership() above: getSession(), not getUser(), to avoid
+      // the same network-race / 403 risk right after a fresh sign-in.
+      const { data: auth } = await supabase.auth.getSession();
+      const uid = auth.session?.user?.id;
       if (!uid) return false;
       const { data, error } = await supabase
         .from("app_members")
