@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -10,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMember, useMembership } from "@/lib/portfolio";
-import { inviteMember, listMembers, removeMember } from "@/lib/admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -22,6 +21,15 @@ export const Route = createFileRoute("/admin")({
   }),
   component: AdminPage,
 });
+
+type Member = {
+  id: string;
+  email: string;
+  role: string;
+  invited_by: string;
+  created_at: string;
+  claimed_at: string | null;
+};
 
 function AdminPage() {
   const { session, loading } = useAuth();
@@ -48,40 +56,61 @@ function AdminPage() {
 
 function MembersPanel() {
   const qc = useQueryClient();
-  const invokeInvite = useServerFn(inviteMember);
-  const invokeRemove = useServerFn(removeMember);
-  const invokeList = useServerFn(listMembers);
+  const { user } = useAuth();
 
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"member" | "owner">("member");
-  const [lastInvite, setLastInvite] = useState<{
-    email: string;
-    tempPassword: string | undefined;
-  } | null>(null);
 
   const members = useQuery({
     queryKey: ["app-members"],
-    queryFn: () => invokeList(),
+    queryFn: async (): Promise<Member[]> => {
+      const { data, error } = await supabase
+        .from("app_members")
+        .select("id, email, role, invited_by, created_at, claimed_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   const invite = useMutation({
-    mutationFn: (input: { email: string; role: "member" | "owner" }) =>
-      invokeInvite({ data: input }),
-    onSuccess: (result) => {
-      setLastInvite({ email: result.email, tempPassword: result.tempPassword });
+    mutationFn: async (input: { email: string; role: "member" | "owner" }) => {
+      const normalized = input.email.trim().toLowerCase();
+      const { error } = await supabase.from("app_members").insert({
+        email: normalized,
+        role: input.role,
+        invited_by: user?.email ?? "",
+      });
+      if (error) throw error;
+      return normalized;
+    },
+    onSuccess: (invitedEmail) => {
       setEmail("");
-      toast.success(
-        result.tempPassword
-          ? `Account created for ${result.email}`
-          : `${result.email} already had an account — access granted`,
-      );
+      toast.success(`${invitedEmail} can now sign up at /auth to get access`);
       qc.invalidateQueries({ queryKey: ["app-members"] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not send invite"),
+    onError: (err) => {
+      const message = err instanceof Error ? err.message : "Could not send invite";
+      toast.error(
+        message.includes("duplicate") || message.includes("app_members_email_lower_idx")
+          ? "That email is already invited or a member."
+          : message,
+      );
+    },
   });
 
   const revoke = useMutation({
-    mutationFn: (id: string) => invokeRemove({ data: { id } }),
+    mutationFn: async (target: Member) => {
+      if (target.email.toLowerCase() === user?.email?.toLowerCase()) {
+        throw new Error("You can't remove your own access.");
+      }
+      if (target.role === "owner") {
+        const owners = (members.data ?? []).filter((m) => m.role === "owner");
+        if (owners.length <= 1) throw new Error("Can't remove the last owner.");
+      }
+      const { error } = await supabase.from("app_members").delete().eq("id", target.id);
+      if (error) throw error;
+    },
     onSuccess: () => {
       toast.success("Access revoked");
       qc.invalidateQueries({ queryKey: ["app-members"] });
@@ -128,22 +157,11 @@ function MembersPanel() {
             </Button>
           </form>
 
-          {lastInvite && (
-            <div className="rounded-md border border-accent/30 bg-accent/10 p-3 text-xs">
-              {lastInvite.tempPassword ? (
-                <>
-                  <p className="font-medium text-foreground">
-                    Share this with {lastInvite.email} — shown once, not stored anywhere:
-                  </p>
-                  <p className="mt-1 break-all font-mono text-sm">{lastInvite.tempPassword}</p>
-                </>
-              ) : (
-                <p>
-                  {lastInvite.email} already had an account. Access was granted; no new password.
-                </p>
-              )}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            This authorizes the email, but doesn't create a login. Tell them to sign up at{" "}
+            <span className="font-mono">/auth</span> with this exact email — they pick their own
+            password, and access is granted the moment their account exists.
+          </p>
         </section>
 
         <section className="space-y-3">
@@ -165,7 +183,7 @@ function MembersPanel() {
                     <td className="px-4 py-3">{m.email}</td>
                     <td className="px-4 py-3 capitalize">{m.role}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {m.claimed_at ? "Active" : "Pending sign-in"}
+                      {m.claimed_at ? "Active" : "Pending sign-up"}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {m.invited_by || "—"}
@@ -174,7 +192,7 @@ function MembersPanel() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => revoke.mutate(m.id)}
+                        onClick={() => revoke.mutate(m)}
                         disabled={revoke.isPending}
                       >
                         Revoke
