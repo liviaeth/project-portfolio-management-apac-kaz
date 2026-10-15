@@ -20,10 +20,11 @@ dist-ssr
 .wrangler/
 .dev.vars
 
-# Secrets - .env currently only holds the public Supabase keys, but it's
-# about to also hold SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS entirely
-# and must never reach git history.
-.env
+# .env is committed on purpose: VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY
+# are public, client-safe values that Vite bakes into the browser bundle at
+# *build time* by reading this file from the repo checkout -- Lovable's
+# production build has no other way to get them. (A real secret, e.g. if one
+# is ever needed, belongs in a *.local file instead, which IS ignored below.)
 .env.local
 .env.*.local
 
