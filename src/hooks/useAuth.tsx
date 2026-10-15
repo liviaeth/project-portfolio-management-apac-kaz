@@ -39,3 +39,27 @@ export function useAuth() {
   const user: User | null = session?.user ?? null;
   return { session, user, loading };
 }
+
+/**
+ * Sign out, tolerating a failed server-side revocation. A stale/invalid
+ * token can make supabase-js's own signOut() throw (seen in testing: a 403
+ * on /auth/v1/logout), which skipped the caller's subsequent navigate() and
+ * left the broken session sitting in storage -- blocking even a fresh
+ * sign-in afterwards. localStorage holds nothing in this app except the
+ * Supabase session, so clearing it unconditionally here is a safe backstop
+ * regardless of what signOut() itself managed to clean up.
+ */
+export async function forceSignOut() {
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.error("signOut failed, clearing local session anyway", err);
+  } finally {
+    try {
+      localStorage.clear();
+    } catch {
+      // Storage may be unavailable (e.g. a locked-down browser setting) --
+      // nothing more we can do from here.
+    }
+  }
+}

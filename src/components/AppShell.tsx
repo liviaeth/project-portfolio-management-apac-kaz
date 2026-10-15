@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { forceSignOut, useAuth } from "@/hooks/useAuth";
 import { useMembership, useProjects, useRealtimePortfolio } from "@/lib/portfolio";
 import { HEALTH_DOT } from "@/lib/ridac";
 import { cn } from "@/lib/utils";
@@ -92,7 +91,7 @@ export function AppShell({
               <button
                 className="text-xs text-nav-muted hover:text-accent"
                 onClick={async () => {
-                  await supabase.auth.signOut();
+                  await forceSignOut();
                   navigate({ to: "/auth" });
                 }}
               >

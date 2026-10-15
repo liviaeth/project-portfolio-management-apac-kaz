@@ -1,6 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { forceSignOut, useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -40,7 +39,7 @@ export function NoAccess() {
             variant="outline"
             className="w-full"
             onClick={async () => {
-              await supabase.auth.signOut();
+              await forceSignOut();
               navigate({ to: "/auth" });
             }}
           >
