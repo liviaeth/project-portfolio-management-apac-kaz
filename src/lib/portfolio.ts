@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import type { Milestone, Project, RidacItem } from "./ridac";
 
 export function useMilestones(projectId?: string) {
@@ -186,46 +187,48 @@ export function useBulkInsertMilestones() {
  * UI such as the members admin page.
  */
 export function useMembership() {
+  // Depend on useAuth()'s already-resolved session instead of calling
+  // getSession() independently inside queryFn. Confirmed by logging: that
+  // independent call could run before the Supabase client finished reading
+  // the session from storage, returning uid: undefined -> a false "no
+  // membership" result that then got cached for staleTime even though a
+  // second, correct call moments later found the real row. enabled below
+  // means this query simply never runs until loading is false.
+  const { user, loading } = useAuth();
+  const uid = user?.id;
   return useQuery({
-    queryKey: ["membership"],
+    queryKey: ["membership", uid],
     queryFn: async (): Promise<{ role: string } | null> => {
-      // getSession() reads the session already stored locally by sign-in --
-      // no network round-trip. getUser() re-verifies the token against the
-      // server on every call, which can race right after a fresh sign-in
-      // (and did: it's what threw the 403 seen in testing), caching a wrong
-      // "not a member" result for up to staleTime.
-      const { data: auth } = await supabase.auth.getSession();
-      const uid = auth.session?.user?.id;
-      if (!uid) return null;
       const { data, error } = await supabase
         .from("app_members")
         .select("role")
-        .eq("user_id", uid)
+        .eq("user_id", uid as string)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
+    enabled: !loading && !!uid,
     staleTime: 60_000,
   });
 }
 
 export function useIsMember() {
+  // See useMembership() above for why this depends on useAuth() rather
+  // than calling getSession() itself.
+  const { user, loading } = useAuth();
+  const uid = user?.id;
   return useQuery({
-    queryKey: ["is-member"],
+    queryKey: ["is-member", uid],
     queryFn: async (): Promise<boolean> => {
-      // See useMembership() above: getSession(), not getUser(), to avoid
-      // the same network-race / 403 risk right after a fresh sign-in.
-      const { data: auth } = await supabase.auth.getSession();
-      const uid = auth.session?.user?.id;
-      if (!uid) return false;
       const { data, error } = await supabase
         .from("app_members")
         .select("user_id")
-        .eq("user_id", uid)
+        .eq("user_id", uid as string)
         .maybeSingle();
       if (error) throw error;
       return data !== null;
     },
+    enabled: !loading && !!uid,
     staleTime: 60_000,
   });
 }
